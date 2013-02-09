@@ -10,12 +10,29 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.pi4j.io.gpio.GpioController;
+import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.gpio.GpioPinDigitalOutput;
+import com.pi4j.io.gpio.PinState;
+import com.pi4j.io.gpio.RaspiPin;
+
 public class TestAssumptions {
 
     // Show that size of long is sufficient to represent entire required sequence of bits
     @Test
     public void testLongSize() {
         assertEquals(64, Long.SIZE);    // so I don't have to worry about merging ints
+    }
+    
+    // Show that the right thing is being turned on
+    @Test
+    public void testGPIOx() throws InterruptedException {
+        if (!System.getProperty("os.name").startsWith("Windows")) {
+            GpioController gpio = GpioFactory.getInstance();
+            GpioPinDigitalOutput pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, "MyLED", PinState.LOW);
+            pin.setState(true);
+            Thread.sleep(2000);
+        }
     }
 
     // Decode a long (effectively) to a sequence of 48 bits 
