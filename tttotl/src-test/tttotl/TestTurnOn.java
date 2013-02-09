@@ -15,11 +15,12 @@ import tttotl.TurnOn.Outputter;
 import tttotl.TurnOn.DigOut;
 
 /* Questions:
- * Decide on a GPIO port - or is that a different one for each team?
+ * Decide on a GPIO port - 00
  * 
- * What is 'Code' in the above, what does it affect?
+ * Channel & Code are just two 2-bit values giving 16 combinations.
  * 
  * How accurate do the timings have to be? 13ms±? 1.5ms±? 0.5ms±? 
+ * Don't know but I have to repeat the stream ~10 times to get a hit...
  * 
  * An example or two of a bit stream would help, where L == pin low, H == pin high, 
  * nn is time in millis & ... is the other 44 bits:
@@ -27,6 +28,10 @@ import tttotl.TurnOn.DigOut;
  * 0x3 (i.e. 0011) is 13L 0.5H 1.5L 1.5H 0.5L 0.5H ...
  */
 public class TestTurnOn {
+    final Boolean T = Boolean.TRUE;
+    final Boolean F = Boolean.FALSE;
+    final long _1 = (long)15e5;
+    final long _0 = (long)5e5;
 
     @Test
     public void testSequencer() {
@@ -47,12 +52,6 @@ public class TestTurnOn {
     
     @Test
     public void testOutputter() {
-        final Boolean T = Boolean.TRUE;
-        final Boolean F = Boolean.FALSE;
-        final long _1 = (long)15e5;
-        final long _0 = (long)5e5;
-
-
         // pipe cleaning
         DigOutForTest pin = new DigOutForTest();
         Outputter outputter = new Outputter(pin);
@@ -67,10 +66,49 @@ public class TestTurnOn {
         System.out.println(pin.getResults());
         
         assertEquals(Arrays.asList(new Result[] {
-                new Result(13e6, F), new Result(5e5, T),  // preamble
-                new Result(_0, F), new Result(_1, T), new Result(_0, F), new Result(_1, T), 
-                new Result(_1, F), new Result(_0, T), new Result(_0, F), new Result(_1, T) 
+                r(13e6, F), r(5e5, T),  // preamble
+                r(_0, F), r(_1, T), r(_0, F), r(_1, T), 
+                r(_1, F), r(_0, T), r(_0, F), r(_1, T) 
         }), pin.getResults());
+    }
+    
+    @Test
+    public void testSequencerAndOutputter() {
+        DigOutForTest pin = new DigOutForTest();
+        Outputter outputter = new Outputter(pin);
+        Sequencer sequence = new Sequencer(ChannelOrCode.two, ChannelOrCode.three, ChannelGoal.on);
+        assertEquals(0x333335333353L, sequence.getValue());
+
+        outputter.output(sequence);
+        pin.setState(true);     // flush the final state
+        
+        System.out.println("Test stream: " + pin.getResults());
+        
+        List<Result> _3 = listOf(r(_1, F), r(_1, T), r(_0, F), r(_0, T));
+        List<Result> _5 = listOf(r(_1, F), r(_0, T), r(_1, F), r(_0, T));
+        ArrayList<Result> expected = new ArrayList<Result>();
+        expected.addAll(listOf(r(13e6, F), r(5e5, T))); // preamble
+        expected.addAll(_3);
+        expected.addAll(_5);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        expected.addAll(_5);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        expected.addAll(_3);
+        assertEquals(expected, pin.getResults());
+    }
+
+    List<Result> listOf(Result... results) {
+        return Arrays.asList(results);
+    }
+
+    Result r(double delta, boolean state) {      // convenience for expected results
+        return new Result((long) delta, state);
     }
 
 static class DigOutForTest implements DigOut {
@@ -94,13 +132,11 @@ static class DigOutForTest implements DigOut {
 }
 
 static class Result {
-    private static final long PERMISSIBLE_ERROR = (long)4e6;       // stupidly large permissible delta
+    private static final long _1MS = (long)1e6;
+    private static final long REASONABLE_ERROR = _1MS / 4;      // !!! >this is just logged
+    private static final long PERMISSIBLE_ERROR = 3 * _1MS;     // stupidly large permissible delta for tests to pass!
     final long delta;
     final boolean state;
-
-    Result(double delta, boolean state) {       // convenience for expected results
-        this((long)delta, state);
-    }
 
     Result(long delta, boolean state) {
         this.delta = delta;
@@ -124,8 +160,10 @@ static class Result {
         if (state != other.state)
             return false;
         if (Math.abs(delta - other.delta) > PERMISSIBLE_ERROR) {
-            System.out.format("Excessive delta %d at %s v. %s\n", delta - other.delta, this, other);
+            System.out.format(">>>Excessive delta<<< %d at %s v. %s\n", delta - other.delta, this, other);
             return false;
+        } else if (Math.abs(delta - other.delta) > REASONABLE_ERROR) {
+            System.out.format(">>>Reasonable(?) delta<<< %d at %s v. %s\n", delta - other.delta, this, other);
         }
         return true;
     }
