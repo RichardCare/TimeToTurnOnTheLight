@@ -1,0 +1,36 @@
+#! /bin/bash
+#
+# Assume java archive (jdk-8-ea-b36e-linux-arm-hflt-29_nov_2012.tar.gz) is in current working directory
+#
+
+jArc="jdk-8-ea-b36e-linux-arm-hflt-29_nov_2012.tar.gz"
+
+wd=`pwd`
+if [ ! -f $jArc ]
+then
+  echo -e "\e[00;31m"
+  echo -e "Java installer archive ($jArc) not in $wd"
+  echo -e "\e[00m"
+  exit 1
+fi
+
+echo "Installing Java"
+
+sudo mkdir /opt/java
+pushd /opt/java
+sudo tar zxvf $wd/$jArc
+sudo update-alternatives --install "/usr/bin/java" "java" "/opt/java/jdk1.8.0/bin/java" 1
+sudo update-alternatives --set java /opt/java/jdk1.8.0/bin/java
+
+# Subtle - redirect > is not sudo'ed so can't use cat, echo etc.
+sudo tee <<HERE /etc/environment
+JAVA_HOME="/opt/java/jdk1.8.0
+HERE
+
+popd
+
+#pi@raspberrypi ~ $ nano ~/.bash_aliases
+#pi@raspberrypi ~ $ cat ~/.bash_aliases
+#alias ll='ls -al --color=yes'
+#export JAVA_HOME="/opt/java/jdk1.8.0"
+#export PATH=$PATH:$JAVA_HOME/bin

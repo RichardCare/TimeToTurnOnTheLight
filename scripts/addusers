@@ -1,0 +1,37 @@
+#! /bin/bash
+#
+# addusers nn prefix
+# where nn is highest user to add - e.g. addusers 5 xyzzy creates users xyzzy0 to zyzzy5 with passwaord0 to password5
+# prefix defaults to team
+#
+
+sudo grep -q %ittltl /etc/sudoers
+if [ $? -ne 0 ]
+then
+  echo -e "\e[00;31m"
+  echo -e "Note: the following line must be added to /etc/sudoers to enable java to be run with privilege for memory access"
+  echo -e "	%ittltl ALL= /usr/bin/java"
+  echo -e "\e[00m"
+fi
+
+if [ $# -lt 2 ]
+then
+  prefix="team"
+else
+  prefix=$2
+fi
+
+sudo grep -q ittltl /etc/group
+if [ $? -ne 0 ]
+then
+  sudo addgroup ittltl
+fi
+
+for i in $(seq 0 $1)
+do
+  echo "Creating user $prefix$i"
+  sudo adduser --ingroup ittltl -gecos "" $prefix$i <<HERE
+password$i
+password$i
+HERE
+done
