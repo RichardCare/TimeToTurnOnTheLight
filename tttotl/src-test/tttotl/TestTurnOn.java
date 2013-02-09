@@ -74,16 +74,14 @@ public class TestTurnOn {
     
     @Test
     public void testSequencerAndOutputter() {
-        DigOutForTest pin = new DigOutForTest();
-        Outputter outputter = new Outputter(pin);
         Sequencer sequence = new Sequencer(ChannelOrCode.two, ChannelOrCode.three, ChannelGoal.on);
         assertEquals(0x333335333353L, sequence.getValue());
 
+        DigOutForTest pin = new DigOutForTest();
+        Outputter outputter = new Outputter(pin);
         outputter.output(sequence);
         pin.setState(true);     // flush the final state
-        
-        System.out.println("Test stream: " + pin.getResults());
-        
+
         List<Result> _3 = listOf(r(_1, F), r(_1, T), r(_0, F), r(_0, T));
         List<Result> _5 = listOf(r(_1, F), r(_0, T), r(_1, F), r(_0, T));
         ArrayList<Result> expected = new ArrayList<Result>();
@@ -100,7 +98,18 @@ public class TestTurnOn {
         expected.addAll(_3);
         expected.addAll(_3);
         expected.addAll(_3);
+
+        System.out.println("Test stream: " + pin.getResults());
+        
+        long largestError = 0;
+        for (int i = 0; i < expected.size(); i++) {
+            long error = Math.abs(expected.get(i).delta - pin.getResults().get(i).delta);
+            largestError = Math.max(largestError, error);
+        }
+        System.out.println("Largest error = " + largestError);
         assertEquals(expected, pin.getResults());
+        
+        
     }
 
     List<Result> listOf(Result... results) {
@@ -132,9 +141,10 @@ static class DigOutForTest implements DigOut {
 }
 
 static class Result {
-    private static final long _1MS = (long)1e6;
-    private static final long REASONABLE_ERROR = _1MS / 4;      // !!! >this is just logged
-    private static final long PERMISSIBLE_ERROR = 3 * _1MS;     // stupidly large permissible delta for tests to pass!
+    private static final long MICRO_S = (long)1e3;
+    private static final long MS = 1000 * MICRO_S;
+    private static final long REASONABLE_ERROR = 150 * MICRO_S;       // !!! >this is just logged
+    private static final long PERMISSIBLE_ERROR = 1 * MS;             // stupidly large permissible delta for tests to pass!
     final long delta;
     final boolean state;
 
