@@ -189,7 +189,7 @@ public class TurnOn {
             help();
         } else {
             GpioController gpio = GpioFactory.getInstance();
-            GpioPinDigitalOutput pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01, "MyLED", PinState.LOW);
+            GpioPinDigitalOutput pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_08, "MyLED", PinState.LOW);
             try {
                 ChannelOrCode channel = ChannelOrCode.valueOf(args[0]);
                 ChannelOrCode code = ChannelOrCode.valueOf(args[1]);
@@ -199,8 +199,10 @@ public class TurnOn {
 
                 TurnOn turnOn = new TurnOn(new Outputter(new SimplePin(pin)));
                 Sequencer sequence = new Sequencer(channel, code, goal);
-                
-                turnOn.apply(sequence);
+
+                for (int i = 0; i < 10; i++) {
+                    turnOn.apply(sequence);
+                }
             } catch (IllegalArgumentException x) {
                 help();
             }
