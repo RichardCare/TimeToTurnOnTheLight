@@ -49,8 +49,6 @@ import com.pi4j.io.gpio.RaspiPin;
 
 public class TurnOn {
     
-    private final Outputter outputter;
-
     enum ChannelOrCode {
         one(0x3335),
         two(0x3353),
@@ -189,7 +187,7 @@ public class TurnOn {
             help();
         } else {
             GpioController gpio = GpioFactory.getInstance();
-            GpioPinDigitalOutput pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_08, "MyLED", PinState.LOW);
+            GpioPinDigitalOutput pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, "MyLED", PinState.LOW);
             try {
                 ChannelOrCode channel = ChannelOrCode.valueOf(args[0]);
                 ChannelOrCode code = ChannelOrCode.valueOf(args[1]);
@@ -197,24 +195,16 @@ public class TurnOn {
                 System.out.format("Turning channel %s %s %s\n", channel, code, goal);
                 System.out.format("Turning channel %x %x %x\n", channel.getValue(), code.getValue(), goal.getValue());
 
-                TurnOn turnOn = new TurnOn(new Outputter(new SimplePin(pin)));
+                Outputter outputter = new Outputter(new SimplePin(pin));
                 Sequencer sequence = new Sequencer(channel, code, goal);
 
                 for (int i = 0; i < 10; i++) {
-                    turnOn.apply(sequence);
+                    outputter.output(sequence);
                 }
             } catch (IllegalArgumentException x) {
                 help();
             }
         }
-    }
-
-    public TurnOn(Outputter outputter) {
-        this.outputter = outputter;
-    }
-    
-    public void apply(Sequencer sequence) {
-        outputter.output(sequence);
     }
 
     private static void help() {
