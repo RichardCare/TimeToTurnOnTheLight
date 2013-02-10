@@ -1,0 +1,23 @@
+#! /bin/bash
+
+# Define locations
+root=tttotl
+bin=$root/bin
+libs=lib/'*':junit/'*'
+
+# Ensure bin directory exists & is empty
+mkdir -p $bin
+rm -rf $bin/*
+
+# Loop thru all src dir in $root, compiling if any java files found
+for d in `find $root/src* -type d`
+do
+  if [ "$(ls -A $d/*.java 2>/dev/null)" ]
+  then
+    echo "Compiling $d"
+    /opt/java/jdk1.8.0/bin/javac -d $bin -cp $libs:$bin $d/*.java
+  else
+    echo "Skipping  $d"
+  fi
+done
+
