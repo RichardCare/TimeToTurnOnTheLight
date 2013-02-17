@@ -19,7 +19,7 @@ function init() {
 	var canvas = document.getElementById('canvas');
 	
 	// Canvas supported?
-	if(canvas.getContext('2d')) {
+	if (canvas.getContext('2d')) {
 		ctx = canvas.getContext('2d');
 		
 		// Load the hour hand image
@@ -47,10 +47,8 @@ function init() {
 
 function initTeams() {
 	var activity = eval(teamsStr);
-	var p = new Point(0, 0);
 	for (key in activity) {
-		teams.push(new Clock(activity[key], p));
-		p = p.wrap();
+		teams.push(new Clock(activity[key]));
 	}
 }
 
@@ -68,33 +66,43 @@ function draw(data, status) {
 	var now = new Date();
 	var activity = eval(jsonStr);
 
-	var p = new Point(0, 0);
+	// Sort activity by time ascending (NB hence has to be objects)
+	times = [];
+	for (key in activity) {
+		var t = new Object();
+		t.name = String(key);
+		t.time = activity[key];
+		times.push(t);
+	}
+	times.sort(function(a, b) {return a.time - b.time;});
+
+	// Draw clocks in ascending time order
 	ctx.clearRect(0, 0, HEIGHT, WIDTH);	 
-	for (var i = 0; i < teams.length; i++) {
-		var piTime = 0;
-		for (key in activity) {
-			name = String(key);
-			if (name == teams[i].teamName) {
-				piTime = COST_FACTOR * activity[key];
+	var p = new Point(0, 0);
+	for (var i = 0; i < times.length; i++) {
+		for (var j = 0; j < teams.length; j++) {
+			if (times[i].name == teams[j].teamName) {
+				var piTime = COST_FACTOR * times[i].time;
+				teams[j].draw(p, now, piTime);
+				p = p.wrap();
 				break;
 			}
 		}
-		teams[i].draw(now, piTime);
 	}
+
 }
 
-function Clock(teamName, topLeft) {
+function Clock(teamName) {
 	this.teamName = teamName;
-	this.topLeft = topLeft;
 }
 
-Clock.prototype.draw = function(now, piTime) {
+Clock.prototype.draw = function(point, now, piTime) {
 	var displayTime = new Date(now);
 	displayTime.setSeconds(displayTime.getSeconds() + piTime);
 	
 	// Save the current drawing state & move to top-left of clock
 	ctx.save();
-	ctx.translate(this.topLeft.x, this.topLeft.y);
+	ctx.translate(point.x, point.y);
 
 	// Draw the clock onto the canvas
 	ctx.drawImage(clock_face, 0, 0);
