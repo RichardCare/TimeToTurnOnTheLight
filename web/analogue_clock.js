@@ -47,15 +47,10 @@ function init() {
 
 function initTeams() {
 	var activity = eval(teamsStr);
-	var leftX = 0;
-	var topY = 0;
+	var p = new Point(0, 0);
 	for (key in activity) {
-		teams.push(new Clock(activity[key], leftX, topY));
-		leftX += WIDTH;
-		if (leftX + WIDTH > window.innerWidth) {
-			leftX = 0;
-			topY += HEIGHT;
-		}
+		teams.push(new Clock(activity[key], p));
+		p = p.wrap();
 	}
 }
 
@@ -73,6 +68,7 @@ function draw(data, status) {
 	var now = new Date();
 	var activity = eval(jsonStr);
 
+	var p = new Point(0, 0);
 	ctx.clearRect(0, 0, HEIGHT, WIDTH);	 
 	for (var i = 0; i < teams.length; i++) {
 		var piTime = 0;
@@ -87,10 +83,9 @@ function draw(data, status) {
 	}
 }
 
-function Clock(teamName, leftX, topY) {
+function Clock(teamName, topLeft) {
 	this.teamName = teamName;
-	this.leftX = leftX;
-	this.topY = topY;
+	this.topLeft = topLeft;
 }
 
 Clock.prototype.draw = function(now, piTime) {
@@ -99,7 +94,7 @@ Clock.prototype.draw = function(now, piTime) {
 	
 	// Save the current drawing state & move to top-left of clock
 	ctx.save();
-	ctx.translate(this.leftX, this.topY);
+	ctx.translate(this.topLeft.x, this.topLeft.y);
 
 	// Draw the clock onto the canvas
 	ctx.drawImage(clock_face, 0, 0);
@@ -133,4 +128,18 @@ function rotateAndDraw(image, angle) {
 	ctx.drawImage(image, -HEIGHT/2, -WIDTH/2);
 	
 	ctx.rotate(-angle);
+}
+
+function Point(x, y) {
+	this.x = x;
+	this.y = y;
+}
+
+Point.prototype.wrap = function() {
+	var result = new Point(this.x + WIDTH, 0);
+	if (result.x + WIDTH > window.innerWidth) {
+		result.x = 0;
+		result.y += HEIGHT;
+	}
+	return result;
 }
