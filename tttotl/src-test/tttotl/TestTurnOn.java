@@ -19,7 +19,7 @@ import tttotl.TurnOn.DigOut;
  * 
  * Channel & Code are just two 2-bit values giving 16 combinations.
  * 
- * How accurate do the timings have to be? 13ms±? 1.5ms±? 0.5ms±? 
+ * How accurate do the timings have to be? 13ms+/-? 1.5ms+/-? 0.5+/-?
  * Don't know but I have to repeat the stream ~10 times to get a hit...
  * 
  * An example or two of a bit stream would help, where L == pin low, H == pin high, 
