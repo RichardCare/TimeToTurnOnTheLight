@@ -5,6 +5,7 @@
 # prefix defaults to team
 #
 
+# Check tweak to allow members of ittltl group to sudo java to gain memory access for pi4j
 sudo grep -q %ittltl /etc/sudoers
 if [ $? -ne 0 ]
 then
@@ -14,6 +15,7 @@ then
   echo -e "\e[00m"
 fi
 
+# Use prefix from command line or default to 'team'
 if [ $# -lt 2 ]
 then
   prefix="team"
@@ -21,12 +23,14 @@ else
   prefix=$2
 fi
 
+# Create ittltl group if not present
 sudo grep -q ittltl /etc/group
 if [ $? -ne 0 ]
 then
   sudo addgroup ittltl
 fi
 
+# Create users
 for i in $(seq 0 $1)
 do
   echo "Creating user $prefix$i"
@@ -34,4 +38,9 @@ do
 password$i
 password$i
 HERE
+  sudo mkdir /home/$prefix$i/.ssh
+  sudo chown $prefix$i:ittltl /home/$prefix$i/.ssh
+  sudo cp -a ~/.ssh/id_rsa /home/$prefix$i/.ssh
+  sudo chmod 400 /home/$prefix$i/.ssh/id_rsa
+  sudo chown $prefix$i:ittltl /home/$prefix$i/.ssh/id_rsa
 done
