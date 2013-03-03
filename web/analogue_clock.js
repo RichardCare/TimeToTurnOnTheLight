@@ -38,18 +38,9 @@ function init() {
 		clock_face = new Image();
 		clock_face.src = 'clock_face.png';
  		clock_face.onload = imgLoaded;
-		
-		$.getScript(ACTIVITY_NAME, initTeams);
 	} else {
   		alert("Canvas not supported!");
   	}
-}
-
-function initTeams() {
-	var activity = eval(teamsStr);
-	for (key in activity) {
-		teams.push(new Clock(activity[key]));
-	}
 }
 
 function imgLoaded() {
@@ -64,7 +55,7 @@ function reload() {
 function draw(data, status) {
 	// Parse updated activity info
 	var now = new Date();
-	var activity = eval(jsonStr);
+	var activity = eval(activities);
 
 	// Sort activity by time ascending (NB hence has to be objects)
 	times = [];
@@ -80,14 +71,20 @@ function draw(data, status) {
 	ctx.clearRect(0, 0, HEIGHT, WIDTH);	 
 	var p = new Point(0, 0);
 	for (var i = 0; i < times.length; i++) {
+		var team = null;
 		for (var j = 0; j < teams.length; j++) {
 			if (times[i].name == teams[j].teamName) {
-				var piTime = COST_FACTOR * times[i].time;
-				teams[j].draw(p, now, piTime);
-				p = p.wrap();
+				team = teams[j];
 				break;
 			}
 		}
+		if (team == null) {
+			team = new Clock(times[i].name);
+			teams.push(team);
+		}
+		var piTime = COST_FACTOR * times[i].time;
+		team.draw(p, now, piTime);
+		p = p.wrap();
 	}
 
 }
@@ -144,7 +141,7 @@ function Point(x, y) {
 }
 
 Point.prototype.wrap = function() {
-	var result = new Point(this.x + WIDTH, 0);
+	var result = new Point(this.x + WIDTH, this.y);
 	if (result.x + WIDTH > window.innerWidth) {
 		result.x = 0;
 		result.y += HEIGHT;
