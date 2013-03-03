@@ -1,6 +1,8 @@
 #! /usr/bin/python
 #
-# Get login times, parse & accumulate them
+# Get login times, parse & accumulate them.
+#
+# last output formatted as...
 #          1         2         3         4         5         6         7         8         9
 #0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 #reboot   system boot  3.2.27+          Sun Feb 10 23:36:42 2013 - Tue Feb 12 22:53:44 2013 (1+23:17)
@@ -10,6 +12,10 @@
 #[0:9]                                      [43:63]                                         [91:-1]
 #		time.strptime(line[43:63], "%b %d %H:%M:%S %Y")		re.split("((\d+)\+)?(\d{2}):(\d{2})", line[91:-1])
 #
+# Writes activity.jsonp containing:
+#	{'name': time, ...}
+# for home directories starting 'team'
+#
 
 import subprocess
 import datetime
@@ -17,12 +23,6 @@ import time
 import json
 import re
 import os
-
-# first line is list of team's home directories
-teams = [name for name in os.listdir("/home") if name.startswith('team')]
-teams.sort()
-
-lines = subprocess.check_output(["last", "-F"]).split("\n")
 
 def parse(now, line):
     if len(line.strip()) == 0:
@@ -41,19 +41,18 @@ def parse(now, line):
     return (user, deltaT)
 
 now = time.gmtime()
-results = dict()
+
+teams = [name for name in os.listdir("/home") if name.startswith('team')]
+results = {team: 0 for team in teams}
+lines = subprocess.check_output(["last", "-F"]).split("\n")
+
 for line in lines:
     a = parse(now, line)
     if a is None:
         continue
     if a[0] in results:
         results[a[0]] =  results[a[0]] + a[1]
-    else:
-        results[a[0]] =  a[1]
 
 fp = open('activity.jsonp', 'w')
-fp.write('teamsStr=')
-json.dump(teams, fp)
-fp.write(';\njsonStr=')
 json.dump(results, fp)
 fp.close()
