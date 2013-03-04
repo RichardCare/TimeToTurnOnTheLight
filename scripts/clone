@@ -1,4 +1,15 @@
 #! /bin/bash
 
-git clone git@github.com:RichardCare/TimeToTurnOnTheLight.git
+if [ $# -lt 1 ]
+then
+  echo -e "\e[00;31m"
+  echo -e "Please specify the team-name (e.g. team1) on the command line"
+  echo -e "\e[00m"
+  exit
+fi
 
+cd ~
+git clone /mnt/ittltl
+cd ittltl
+git config user.email "$1@raspi.spa2013"
+git config user.name $1
