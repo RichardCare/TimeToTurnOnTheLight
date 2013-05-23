@@ -107,7 +107,8 @@ Clock.prototype.draw = function(point, now, piTime) {
 	// Do the text
 	ctx.font="40px Arial";
 	ctx.textAlign = 'center';
-	ctx.fillText(this.teamName, WIDTH/2, 55);
+	ctx.fillStyle = this.teamName;
+	ctx.fillText(this.teamName, WIDTH/2, 60);
 	ctx.fillText(displayTime.toTimeString().substr(0, 8), WIDTH/2, HEIGHT - 28);
 	
 	// Now move across and down half the 
