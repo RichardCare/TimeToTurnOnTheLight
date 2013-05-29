@@ -1,8 +1,10 @@
 #! /bin/bash
 #
-# addusers nn prefix
-# where nn is highest user to add - e.g. addusers 5 xyzzy creates users xyzzy0 to zyzzy5 with passwaord0 to password5
-# prefix defaults to team
+# addusers team-name1 ... team-nameN
+# where the arguments are the names of the teams to created.
+# If the name is longer than 8 characters (wtmp/libc-5 constraint), the user is not created.
+# If the home directory of the team of the already exists, the user is not created.
+# Otherwise the user is created (a member of group ittltl),  and other stuff done.
 #
 
 # Check tweak to allow members of ittltl group to sudo java to gain memory access for pi4j
@@ -15,14 +17,6 @@ then
   echo -e "\e[00m"
 fi
 
-# Use prefix from command line or default to 'team'
-if [ $# -lt 2 ]
-then
-  prefix="team"
-else
-  prefix=$2
-fi
-
 # Create ittltl group if not present
 sudo grep -q ittltl /etc/group
 if [ $? -ne 0 ]
@@ -30,17 +24,29 @@ then
   sudo addgroup ittltl
 fi
 
-# Create users
-for i in $(seq 0 $1)
+# Create users - iterate over command line arguments (the team names)
+for i in "$@"
 do
-  echo "Creating user $prefix$i"
-  sudo adduser --ingroup ittltl -gecos "" $prefix$i <<HERE
-password$i
-password$i
+  if [ -d "/home/$i" ]
+  then
+    echo "User $i already exists"
+    continue
+  fi
+  if [ ${#i} -gt 8 ]
+  then
+    echo "User name $i longer than 8 characters - not creating"
+    continue
+  fi
+
+  echo "Creating user $i"
+  sudo adduser --ingroup ittltl -gecos "" $i <<HERE
+$i
+$i
 HERE
-  sudo mkdir /home/$prefix$i/.ssh
-  sudo chown $prefix$i:ittltl /home/$prefix$i/.ssh
-  sudo cp -a ~/.ssh/id_rsa /home/$prefix$i/.ssh
-  sudo chmod 400 /home/$prefix$i/.ssh/id_rsa
-  sudo chown $prefix$i:ittltl /home/$prefix$i/.ssh/id_rsa
+# TODO - what's actually required if using the git protocol
+  sudo mkdir /home/$i/.ssh
+  sudo chown $i:ittltl /home/$i/.ssh
+  sudo cp -a ~/.ssh/id_rsa /home/$i/.ssh
+  sudo chmod 400 /home/$i/.ssh/id_rsa
+  sudo chown $i:ittltl /home/$i/.ssh/id_rsa
 done

@@ -14,7 +14,9 @@
 #
 # Writes activity.jsonp containing:
 #	{'name': time, ...}
-# for home directories starting 'team'
+# for home directories other than Desktop & pi
+#
+# To run repeatedly: while [ 1 ]; do ./last.py ; sleep 2; done
 #
 
 import subprocess
@@ -30,6 +32,8 @@ def parse(now, line):
     if line.startswith("wtmp"):
         return None
     user = line[0:9].strip()
+    if user == "Desktop" or user == "pi":
+        return None
     try:
         deltas = re.split("((\d+)\+)?(\d{2}):(\d{2})", line[91:-1])
         days = deltas[2]
@@ -51,7 +55,9 @@ for line in lines:
     if a is None:
         continue
     if a[0] in results:
-        results[a[0]] =  results[a[0]] + a[1]
+        results[a[0]] = results[a[0]] + a[1]
+    else:
+        results[a[0]] = a[1]
 
 fp = open('activity.jsonp', 'w')
 json.dump(results, fp)

@@ -1,19 +1,13 @@
 #! /bin/bash
 #
-# delusers prefix
-# deletes all users whose home directory starts with the prefix (default team)
+# delusers user1 ... userN
+# deletes the listed users by name, deliberately skipping the RasPi names Desktop & pi
 #
 
-if [ $# -lt 1 ]
-then
-  prefix="team"
-else
-  prefix=$1
-fi
-
-for i in `ls /home | grep $prefix`
+for i in "$@"
 do
+  if [ "$i" == "Desktop" ]; then continue; fi
+  if [ "$i" == "pi" ]; then continue; fi
   echo "Deleting user $i"
   sudo deluser --remove-home $i
 done
-
