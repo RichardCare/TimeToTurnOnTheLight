@@ -6,15 +6,12 @@ var clock_face = null,
 	ctx = null,
 	teams = new Array();
 
-var HEIGHT = 500;
-var WIDTH = 500;
+var FULL_SIZE = 500;
 var ACTIVITY_NAME = 'activity.jsonp';
 var COST_FACTOR = 2;
+var INTERVAL = 1000;
 
 function init() {
-	// Available space
-	console.log(window.innerHeight, "by", window.innerWidth);
-
 	// Grab the canvas element
 	var canvas = document.getElementById('canvas');
 	
@@ -45,7 +42,7 @@ function init() {
 
 function imgLoaded() {
 	// Image loaded event complete. Start the timer which reads ACTIVITY_NAME then calls draw()
-	setInterval(reload, 200);
+	setInterval(reload, INTERVAL);
 }
 
 function reload() {
@@ -53,6 +50,10 @@ function reload() {
 }
 
 function draw(data, status) {
+	// Fill window with canvas
+	ctx.canvas.width = window.innerWidth;
+	ctx.canvas.height = window.innerHeight;
+
 	// Parse updated activity info
 	var now = new Date();
 	var activity = eval(activities);
@@ -67,9 +68,8 @@ function draw(data, status) {
 	}
 	times.sort(function(a, b) {return a.time - b.time;});
 
-	// Draw clocks in ascending time order
-	ctx.clearRect(0, 0, HEIGHT, WIDTH);	 
-	var p = new Point(0, 0);
+	// Draw scaled clocks in ascending time order
+	var p = new Point(0, 0, max_tile_size(times.length, window.innerWidth, window.innerHeight));
 	for (var i = 0; i < times.length; i++) {
 		var team = null;
 		for (var j = 0; j < teams.length; j++) {
@@ -102,17 +102,18 @@ Clock.prototype.draw = function(point, now, piTime) {
 	ctx.translate(point.x, point.y);
 
 	// Draw the clock onto the canvas
+	ctx.scale(point.scale(), point.scale());
 	ctx.drawImage(clock_face, 0, 0);
 	
 	// Do the text
 	ctx.font="40px Arial";
 	ctx.textAlign = 'center';
 	ctx.fillStyle = this.teamName;
-	ctx.fillText(this.teamName, WIDTH/2, 60);
-	ctx.fillText(displayTime.toTimeString().substr(0, 8), WIDTH/2, HEIGHT - 28);
+	ctx.fillText(this.teamName, FULL_SIZE/2, 60);
+	ctx.fillText(displayTime.toTimeString().substr(0, 8), FULL_SIZE/2, FULL_SIZE - 28);
 	
-	// Now move across and down half the 
-	ctx.translate(HEIGHT/2, WIDTH/2);
+	// Now move across and down half the clock size
+	ctx.translate(FULL_SIZE/2, FULL_SIZE/2);
   	rotateAndDraw(minute_hand, getRequiredAngle(displayTime.getMinutes() + displayTime.getSeconds() / 60, 60));
  	rotateAndDraw(hour_hand, getRequiredAngle(displayTime.getHours() + displayTime.getMinutes() / 60, 12));
  	rotateAndDraw(second_hand, getRequiredAngle(displayTime.getSeconds() + displayTime.getMilliseconds() / 1000, 60));
@@ -131,21 +132,50 @@ function rotateAndDraw(image, angle) {
 	ctx.rotate(angle);
  
 	// Draw the image back and up
-	ctx.drawImage(image, -HEIGHT/2, -WIDTH/2);
+	ctx.drawImage(image, -FULL_SIZE/2, -FULL_SIZE/2);
 	
 	ctx.rotate(-angle);
 }
 
-function Point(x, y) {
+function Point(x, y, delta) {
 	this.x = x;
 	this.y = y;
+	this.delta = delta;
+}
+
+Point.prototype.scale = function() {
+	return this.delta / FULL_SIZE;
 }
 
 Point.prototype.wrap = function() {
-	var result = new Point(this.x + WIDTH, this.y);
-	if (result.x + WIDTH > window.innerWidth) {
+	var result = new Point(this.x + this.delta, this.y, this.delta);
+	if (result.x + this.delta > window.innerWidth) {
 		result.x = 0;
-		result.y += HEIGHT;
+		result.y += this.delta;
 	}
 	return result;
+}
+
+function max_tile_size(tile_count, width, height) {
+	// See http://stackoverflow.com/questions/868997/max-square-size-for-unknown-number-inside-rectangle
+	if (width < height) {
+		width = [height, height = width][0];
+	}
+	var rect_ar = width / height;
+	var tiles_max_height = Math.floor(Math.ceil(Math.sqrt(tile_count)));
+	var best_tile_size = 0;
+	for (var i = 1; i < tiles_max_height + 1; i++) {
+		var tiles_used = Math.ceil(tile_count / i);
+		var tiles_ar = tiles_used / i;
+		var tile_size = 0;
+		if (tiles_ar > rect_ar) {
+			tile_size = width / tiles_used;
+		} else {
+			tile_size = height / i;
+		}
+		if (tile_size > best_tile_size) {
+			best_tile_size = tile_size;
+		}
+	}
+	return best_tile_size;
 }
