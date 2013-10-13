@@ -1,0 +1,6 @@
+#! /bin/bash
+cd $(dirname "$0")
+d=`date`
+echo "======== $d =======" >>~/server.out
+echo "======== $d =======" >>~/server.err
+python -m CGIHTTPServer 2>>~/server.err >>~/server.out &

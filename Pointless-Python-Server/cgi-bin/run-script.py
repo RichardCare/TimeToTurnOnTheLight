@@ -44,11 +44,11 @@ except NameError:
 
 # 'increment' the appropriate team counter
 f = open('/home/erac/team-stats', 'a')
-f.write('%s,%s,%.2f\n' % (now, teamname, delta))
+f.write('%s,%s,%.2f\n' % (teamname, now, delta))
 f.close()
 
 # A bit of logging
-sys.stderr.write('Script for [%s] (elapsed %.2f):\n' % (teamname, delta))
+sys.stderr.write('Script for [%s] (elapsed %.2f)\n' % (teamname, delta))
 
 # Return results to requesting team's web-page
 print """Content-type: text/html
