@@ -12,6 +12,10 @@ import re
 form = cgi.FieldStorage()
 teamname = form.getvalue('name')
 
+agent = os.environ['HTTP_USER_AGENT']
+clientIsWindows = agent.lower().find('windows') != -1
+sys.stderr.write("isWindows=%s HTTP_USER_AGENT=%s\n" % (clientIsWindows, agent))
+
 # Switch to the scratch directory
 os.chdir('/home/erac/scratch')
 
@@ -21,8 +25,11 @@ subprocess.check_output('rm -rf *', shell=True)
 now = datetime.datetime.now()
 try:
     # Clone repo & switch to team's branch (either by protocol or by file for Windows compatibility)
-    ### output = subprocess.check_output('git clone git://127.0.0.1/git/ittltl.git', shell=True)
-    output = subprocess.check_output('git clone /var/cache/git-win/ittltl.git', shell=True)
+    ### output = subprocess.check_output('git clone /var/cache/git-win/ittltl.git', shell=True)
+    if clientIsWindows:
+        output = subprocess.check_output('git clone /mnt/git/ittltl.git', shell=True)
+    else:
+        output = subprocess.check_output('git clone git://raspberrypi2.local/git/ittltl.git', shell=True)
     os.chdir('ittltl')
     output += subprocess.check_output('git checkout --track origin/%s' % teamname, stderr=subprocess.STDOUT, shell=True)
 
